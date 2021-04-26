@@ -2,7 +2,7 @@
 # Developed by Connor Minney & Kaleb Tucker
 
 # Load Packages
-  pacman::p_load(dplyr, stringr, rpart, rpart.plot, mosaic, FNN,fastDummies, e1071, nnet)
+  pacman::p_load(dplyr, stringr, rpart, rpart.plot, mosaic, FNN,fastDummies, e1071, nnet, corrplot)
   options(scipen = 10)
   
 # Import Data
@@ -58,6 +58,8 @@
     
     
   # Check Correlations
+    # As most of these items are qualitative, we are unable to determine correlations w/o extending the dataset so sufficiently large
+    # that it would be impracticle to perform (e.g., 1700 columns for dog breeds alone)
 
     
   # Split the Data into Training, Validation, and Testing Sets
