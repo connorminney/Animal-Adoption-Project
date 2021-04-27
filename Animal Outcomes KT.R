@@ -2,7 +2,7 @@
 # Developed by Connor Minney & Kaleb Tucker
 
 # Load Packages
-  pacman::p_load(dplyr, stringr, rpart, rpart.plot, mosaic, FNN,fastDummies, e1071, nnet, corrplot, caret, arm)
+  pacman::p_load(dplyr, stringr, rpart, rpart.plot, mosaic, FNN,fastDummies, e1071, nnet, corrplot, caret, arm, brnn)
   options(scipen = 10)
   
 # Import Data
@@ -144,10 +144,10 @@
     # Stepwise Regression - KFold
         
         # Model - 10 Folds 
-         stepwise_kfold <- train(outcome_type ~ . , data = asdf_kfold_train ,method = 'glmStepAIC', trControl = trainControl("cv", number = 10 ))     
+        # stepwise_kfold <- train(outcome_type ~ . , data = asdf_kfold_train ,method = 'glmStepAIC', trControl = trainControl("cv", number = 10 ))     
         
         # Model Summary
-        logistic_kfold
+        # Stepwise_kfold
         
     
     #--------------------------------------------------------------------------#
@@ -200,8 +200,12 @@
         
         
     #--------------------------------------------------------------------------#
+    
     # KNN - TVT
+    
     # KNN - KFold
+    
+        
     #--------------------------------------------------------------------------#
     
     # NNet - TVT 
@@ -218,7 +222,16 @@
       # Validation Accuracy - 80.6%
     
     # NNet - KFold
+      # Model - 10 Folds 
+      nnet_kfold <- train(outcome_type ~ . , data = asdf_norm_kfold_train ,method = 'avNNet', trControl = trainControl("cv", number = 10 ))     
       
+      # Model Summary
+      nnet_kfold
+      
+      # Model Predictions & Accuracy 
+      asdf_nnet_kfold_predictions <- mutate(asdf_norm_kfold_test, model_predictions = predict(nnet_kfold, newdata = asdf_norm_kfold_test))
+      mean(~(outcome_type == model_predictions), data = asdf_nnet_kfold_predictions )
+      # Model Accuracy 80.73% 
       
     #--------------------------------------------------------------------------#
         
