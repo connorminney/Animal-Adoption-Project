@@ -2,7 +2,7 @@
 # Developed by Connor Minney & Kaleb Tucker
 
 # Load Packages
-  pacman::p_load(dplyr, stringr, rpart, rpart.plot, mosaic, FNN,fastDummies, e1071, nnet, corrplot, caret, arm, brnn)
+  pacman::p_load(dplyr, stringr, rpart, rpart.plot, mosaic, FNN,fastDummies, e1071, nnet, corrplot, caret, arm, brnn, LiblineaR)
   options(scipen = 10)
   
 # Import Data
@@ -109,7 +109,6 @@
         mean(~(outcome_type == validation_predictions), data = logistic_predictions)
         # Validation Accuracy - XX.X%
         
-      ###### Review Note - cannot perform this as there are "new factors" with issues randomly assigning values. 
         
     # Logistic Regression - KFold
       # Model - 10 Folds 
@@ -223,7 +222,7 @@
     
     # NNet - KFold
       # Model - 10 Folds 
-      nnet_kfold <- train(outcome_type ~ . , data = asdf_norm_kfold_train ,method = 'avNNet', trControl = trainControl("cv", number = 10 ))     
+      nnet_kfold <- train(outcome_type ~ . , data = asdf_norm_kfold_train ,method = 'avNNet', trControl = trainControl("cv", number = 1 ))     
       
       # Model Summary
       nnet_kfold
@@ -231,7 +230,7 @@
       # Model Predictions & Accuracy 
       asdf_nnet_kfold_predictions <- mutate(asdf_norm_kfold_test, model_predictions = predict(nnet_kfold, newdata = asdf_norm_kfold_test))
       mean(~(outcome_type == model_predictions), data = asdf_nnet_kfold_predictions )
-      # Model Accuracy 80.73% 
+      # Model Accuracy 80.84% 
       
     #--------------------------------------------------------------------------#
         
@@ -251,4 +250,14 @@
         # Validation Accuracy - 79.1%
         
         
-    # SVM - KFold
+    # SVM - KFold (working through now..pick back up)
+        # Model - 10 Folds 
+        svm_kfold <- train(outcome_type ~ . , data = asdf_norm_kfold_train ,method = 'svmLinearWeights2', trControl = trainControl("cv", number = 1 ))     
+        
+        # Model Summary
+        svm_kfold
+        
+        # Model Predictions & Accuracy 
+        asdf_nnet_kfold_predictions <- mutate(asdf_norm_kfold_test, model_predictions = predict(nnet_kfold, newdata = asdf_norm_kfold_test))
+        mean(~(outcome_type == model_predictions), data = asdf_nnet_kfold_predictions )
+        # Model Accuracy XX.XX% 
