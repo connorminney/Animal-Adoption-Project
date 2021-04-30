@@ -62,7 +62,7 @@ asdf = asdf[ , -which(names(asdf) %in% c("breed","color", "intake_condition", "i
 asdf <- asdf[, !duplicated(colnames(asdf))]
 
 # Convert everything to numeric
-asdf<???data.frame(lapply(asdf,as.numeric))
+asdf<- data.frame(lapply(asdf,as.numeric))
 
 # Create correlation matrix
 correlations <- data.frame(cor(asdf))
@@ -95,6 +95,8 @@ adoptions <- adoptions[0:nrow(euthanasia), ]
 asdf1 <- rbind(adoptions, euthanasia)
 remove(adoptions)
 remove(euthanasia)
+
+asdf1$outcome_type <- as.factor(asdf1$outcome_type)
 
 # Data Pre-Processing
 
@@ -145,7 +147,7 @@ logistic_predictions <- mutate(asdf1_valid, validation_predictions = predict(log
 
 # Validation Accuracy
 mean(~(outcome_type == validation_predictions), data = logistic_predictions)
-# Validation Accuracy - XX.X%
+# Validation Accuracy - 71.86%
 
 
 # Logistic Regression - KFold
@@ -158,7 +160,7 @@ logistic_kfold
 # Model Predictions & Accuracy 
 asdf1_logistic_kfold_predictions <- mutate(asdf1_kfold_test, model_predictions = predict(logistic_kfold, newdata = asdf1_kfold_test))
 mean(~(outcome_type == model_predictions), data = asdf1_logistic_kfold_predictions )
-# Model Accuracy 76.1% 
+# Model Accuracy 72.35% 
 
 
 #--------------------------------------------------------------------------#
@@ -170,13 +172,9 @@ summary(stepmodel)
 
 # Validation Predictions & Accuracy
 stepwise_validation  <- mutate(asdf1_valid, validation_predictions = round(predict(stepmodel, newdata = asdf1_valid, type = "response"),0))
-stepwise_validation  <- mutate(stepwise_validation, validation_predictions = ifelse(validation_predictions == 1, "Euthanasia", "Adoption"))
 mean(~(outcome_type == validation_predictions), data = stepwise_validation)
-# Validation Data Accuracy - 80.9%
+# Validation Data Accuracy - 71.86%
 
-# Dimension Reduction - glm(formula = outcome_type ~ sex_upon_outcome2 + outcome_hour + intake_type + outcome_weekday 
-# + intake_condition + outcome_month + time_in_shelter_days + sex_upon_intake1 + age_upon_intake_.days. 
-# + intake_hour + intake_weekday + sex_upon_intake2 + Mix) 
 
 # Stepwise Regression - KFold
 
@@ -184,7 +182,12 @@ mean(~(outcome_type == validation_predictions), data = stepwise_validation)
 stepwise_kfold <- train(outcome_type ~ . , data = asdf1_kfold_train ,method = 'glmStepAIC', trControl = trainControl("cv", number = 10 ))     
 
 # Model Summary
-Stepwise_kfold
+stepwise_kfold
+
+# Model Predictions & Accuracy 
+asdf1_stepwise_kfold_predictions <- mutate(asdf1_kfold_test, model_predictions = predict(stepwise_kfold, newdata = asdf1_kfold_test))
+mean(~(outcome_type == model_predictions), data = asdf1_logistic_kfold_predictions )
+# Model Accuracy 72.35% 
 
 
 #--------------------------------------------------------------------------#
@@ -201,7 +204,7 @@ rpart.plot(tree_model_prun_01,roundint=FALSE,nn=TRUE,extra=4)
 # Validation Predictions & Accuracy
 tree_prun_01_validate  <- mutate(asdf1_valid, validation_predictions = predict(tree_model_prun_01, newdata = asdf1_valid, type = "class"))
 mean(~(outcome_type == validation_predictions), data = tree_prun_01_validate)
-# Validation Accuracy 82.89%
+# Validation Accuracy 74.28%
 
 # CP - .03
 tree_model_prun_03 <- prune(tree_model, cp = 0.03)
@@ -210,8 +213,7 @@ rpart.plot(tree_model_prun_03,roundint=FALSE,nn=TRUE,extra=4)
 # Validation Predictions & Accuracy 
 tree_prun_03_validate  <- mutate(asdf1_valid, validation_predictions = predict(tree_model_prun_03, newdata = asdf1_valid, type = "class"))
 mean(~(outcome_type == validation_predictions), data = tree_prun_03_validate)
-# Validation Accuracy 80.29%
-
+# Validation Accuracy 69.23%
 
 
 # Decision Tree - KFold    
@@ -223,17 +225,17 @@ tree <- train(outcome_type ~ . , data = asdf1_kfold_train ,method = "rpart", trC
 tree
 tree$results
 plot(tree)
-# Best CP = 0.01141553
+# Best CP = 0.001798561
 
 # Model w/ Recommended CP
-tree_model_kfold <- rpart(outcome_type ~ ., data = asdf1_kfold_train, method="class" , cp = 0.01141553)
+tree_model_kfold <- rpart(outcome_type ~ ., data = asdf1_kfold_train, method="class" , cp = 0.001798561)
 rpart.plot(tree_model_kfold, roundint = FALSE, nn = TRUE, extra = 1)
 rpart.plot(tree_model_kfold, roundint = FALSE, nn = TRUE, extra = 4)
 
 # Model Predictions & Accuracy 
 asdf1_tree_kfold_predictions <- mutate(asdf1_kfold_test, model_predictions = predict(tree_model_kfold, newdata = asdf1_kfold_test, type = "class"))
 mean(~(outcome_type == model_predictions), data = asdf1_tree_kfold_predictions )
-# Model Accuracy 80.09% 
+# Model Accuracy 72.69% 
 
 
 #--------------------------------------------------------------------------#
@@ -252,11 +254,10 @@ nn1 <- nnet(outcome_type ~ ., data = asdf1_norm_train, size = 1, linout = F, dec
 
 # Validation Predictions
 nn_predictions <- mutate(asdf1_norm_valid, validation_predictions = predict(nn1,asdf1_norm_valid) %>% round())
-nn_predictions  <- mutate(nn_predictions, validation_predictions = ifelse(validation_predictions == 1, "Euthanasia", "Adoption"))
 
 # Validation Accuracy
 mean(~(outcome_type == validation_predictions),data = nn_predictions) 
-# Validation Accuracy - 80.6%
+# Validation Accuracy - 72.09%
 
 # NNet - KFold
 # Model - 10 Folds 
@@ -268,7 +269,7 @@ nnet_kfold
 # Model Predictions & Accuracy 
 asdf1_nnet_kfold_predictions <- mutate(asdf1_norm_kfold_test, model_predictions = predict(nnet_kfold, newdata = asdf1_norm_kfold_test))
 mean(~(outcome_type == model_predictions), data = asdf1_nnet_kfold_predictions )
-# Model Accuracy 80.84% 
+# Model Accuracy 73.38% 
 
 #--------------------------------------------------------------------------#
 
@@ -279,16 +280,15 @@ svmfit <- svm(outcome_type ~ ., data = asdf1_norm_train , type = "C-classificati
 
 # Validation Predictions
 svm_validation_predictions <- predict(svmfit,asdf1_norm_valid,probability=TRUE)
-svm_validation_predictions <- mutate(asdf1_norm_valid, train_pred_svm_prob = attributes(svm_validation_predictions)$probabilities[,1]) #DF with Predictions
-svm_validation_predictions <- mutate(svm_validation_predictions,train_pred_svm_rounded = round(train_pred_svm_prob)) # Rounding
-svm_validation_predictions  <- mutate(svm_validation_predictions, validation_predictions = ifelse(train_pred_svm_rounded == 1, "Adoption","Euthanasia")) # Assign Euthanasia v. Adoption
+svm_validation_predictions <- mutate(asdf1_norm_valid, validation_predictions = attributes(svm_validation_predictions)$probabilities[,1]) #DF with Predictions
+svm_validation_predictions <- mutate(svm_validation_predictions, validation_predictions = round(validation_predictions)) # Rounding
 
 # Validation Accuracy
 mean(~(outcome_type == validation_predictions), data = svm_validation_predictions)
-# Validation Accuracy - 79.1%
+# Validation Accuracy - 71.2%
 
 
-# SVM - KFold (working through now..pick back up)
+# SVM - KFold 
 # Model - 10 Folds 
 svm_kfold <- train(outcome_type ~ . , data = asdf1_norm_kfold_train ,method = 'svmLinearWeights2', trControl = trainControl("cv", number = 1 ))     
 
