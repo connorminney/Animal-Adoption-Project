@@ -5,6 +5,8 @@
 pacman::p_load(dplyr, stringr, rpart, rpart.plot, mosaic, FNN,fastDummies, e1071, nnet, corrplot, caret, arm, brnn, LiblineaR, sampling, stringr, varhandle)
 options(scipen = 10)
 
+set.seed(42)
+
 # Import Data
 asdf <- read.csv("C:\\Users\\conno\\OneDrive\\Desktop\\Machine Learning Project\\aac_intakes_outcomes.csv")
 
@@ -68,7 +70,7 @@ asdf<- data.frame(lapply(asdf,as.numeric))
 correlations <- data.frame(cor(asdf))
 
 # Drop variables with correlation < +/-.05
-asdf = asdf[ , which(names(asdf) %in% c("outcome_type", "condition.Normal", "type.Stray", "type.Euthanasia_Request", "age_upon_intake_.years.", "condition.Injured", "condition.Sick", "condition.Aged", "type.Public_Assist", "Mix"))]
+asdf = asdf[ , which(names(asdf) %in% c("neutered","male","outcome_type", "condition.Normal", "type.Stray", "type.Euthanasia_Request", "age_upon_intake_.years.", "condition.Injured", "condition.Sick", "condition.Aged", "type.Public_Assist", "Mix"))]
 
 # Run stepwise
 nullmodel <- glm(outcome_type ~ ., data = asdf, family = binomial )
@@ -76,7 +78,11 @@ stepmodel <- step(nullmodel)
 summary(stepmodel)
 
 # Drop variables that were not identified as relevant by the stepwise
-asdf = asdf[ , which(names(asdf) %in% c("outcome_type", "type.Stray", "type.Euthanasia_Request", "age_upon_intake_.years.", "condition.Injured", "condition.Sick", "type.Public_Assist", "Mix"))]
+asdf = asdf[ , which(names(asdf) %in% c("neutered","male","outcome_type", "type.Stray", "type.Euthanasia_Request", "age_upon_intake_.years.", "condition.Injured", "condition.Sick", "type.Public_Assist", "Mix"))]
+
+
+# Remove any record where fields are incomplete
+asdf <- na.omit(asdf)
 
 # Resampling
 
@@ -144,10 +150,11 @@ summary(logistic_model)
 
 # Validation Predictions
 logistic_predictions <- mutate(asdf1_valid, validation_predictions = predict(logistic_model, asdf1_valid, type="response") %>% round())
+logistic_predictions$validation_predictions <- as.integer(logistic_predictions$validation_predictions)
 
 # Validation Accuracy
 mean(~(outcome_type == validation_predictions), data = logistic_predictions)
-# Validation Accuracy - 71.86%
+# Validation Accuracy - X%
 
 
 # Logistic Regression - KFold
@@ -160,7 +167,7 @@ logistic_kfold
 # Model Predictions & Accuracy 
 asdf1_logistic_kfold_predictions <- mutate(asdf1_kfold_test, model_predictions = predict(logistic_kfold, newdata = asdf1_kfold_test))
 mean(~(outcome_type == model_predictions), data = asdf1_logistic_kfold_predictions )
-# Model Accuracy 72.35% 
+# Model Accuracy X%
 
 
 #--------------------------------------------------------------------------#
@@ -173,7 +180,7 @@ summary(stepmodel)
 # Validation Predictions & Accuracy
 stepwise_validation  <- mutate(asdf1_valid, validation_predictions = round(predict(stepmodel, newdata = asdf1_valid, type = "response"),0))
 mean(~(outcome_type == validation_predictions), data = stepwise_validation)
-# Validation Data Accuracy - 71.86%
+# Validation Data Accuracy - X%
 
 
 # Stepwise Regression - KFold
@@ -187,8 +194,7 @@ stepwise_kfold
 # Model Predictions & Accuracy 
 asdf1_stepwise_kfold_predictions <- mutate(asdf1_kfold_test, model_predictions = predict(stepwise_kfold, newdata = asdf1_kfold_test))
 mean(~(outcome_type == model_predictions), data = asdf1_logistic_kfold_predictions )
-# Model Accuracy 72.35% 
-
+# Model Accuracy X%
 
 #--------------------------------------------------------------------------#
 
@@ -204,7 +210,7 @@ rpart.plot(tree_model_prun_01,roundint=FALSE,nn=TRUE,extra=4)
 # Validation Predictions & Accuracy
 tree_prun_01_validate  <- mutate(asdf1_valid, validation_predictions = predict(tree_model_prun_01, newdata = asdf1_valid, type = "class"))
 mean(~(outcome_type == validation_predictions), data = tree_prun_01_validate)
-# Validation Accuracy 74.28%
+# Validation Accuracy X%
 
 # CP - .03
 tree_model_prun_03 <- prune(tree_model, cp = 0.03)
@@ -213,7 +219,7 @@ rpart.plot(tree_model_prun_03,roundint=FALSE,nn=TRUE,extra=4)
 # Validation Predictions & Accuracy 
 tree_prun_03_validate  <- mutate(asdf1_valid, validation_predictions = predict(tree_model_prun_03, newdata = asdf1_valid, type = "class"))
 mean(~(outcome_type == validation_predictions), data = tree_prun_03_validate)
-# Validation Accuracy 69.23%
+# Validation Accuracy X%
 
 
 # Decision Tree - KFold    
@@ -228,14 +234,14 @@ plot(tree)
 # Best CP = 0.001798561
 
 # Model w/ Recommended CP
-tree_model_kfold <- rpart(outcome_type ~ ., data = asdf1_kfold_train, method="class" , cp = 0.001798561)
+tree_model_kfold <- rpart(outcome_type ~ ., data = asdf1_kfold_train, method="class" , cp = 0.003669725)
 rpart.plot(tree_model_kfold, roundint = FALSE, nn = TRUE, extra = 1)
 rpart.plot(tree_model_kfold, roundint = FALSE, nn = TRUE, extra = 4)
 
 # Model Predictions & Accuracy 
 asdf1_tree_kfold_predictions <- mutate(asdf1_kfold_test, model_predictions = predict(tree_model_kfold, newdata = asdf1_kfold_test, type = "class"))
 mean(~(outcome_type == model_predictions), data = asdf1_tree_kfold_predictions )
-# Model Accuracy 72.69% 
+# Model Accuracy X%
 
 
 #--------------------------------------------------------------------------#
@@ -257,7 +263,7 @@ nn_predictions <- mutate(asdf1_norm_valid, validation_predictions = predict(nn1,
 
 # Validation Accuracy
 mean(~(outcome_type == validation_predictions),data = nn_predictions) 
-# Validation Accuracy - 72.09%
+# Validation Accuracy - X%
 
 # NNet - KFold
 # Model - 10 Folds 
@@ -269,7 +275,7 @@ nnet_kfold
 # Model Predictions & Accuracy 
 asdf1_nnet_kfold_predictions <- mutate(asdf1_norm_kfold_test, model_predictions = predict(nnet_kfold, newdata = asdf1_norm_kfold_test))
 mean(~(outcome_type == model_predictions), data = asdf1_nnet_kfold_predictions )
-# Model Accuracy 73.38% 
+# Model Accuracy X%
 
 #--------------------------------------------------------------------------#
 
@@ -285,7 +291,7 @@ svm_validation_predictions <- mutate(svm_validation_predictions, validation_pred
 
 # Validation Accuracy
 mean(~(outcome_type == validation_predictions), data = svm_validation_predictions)
-# Validation Accuracy - 71.2%
+# Validation Accuracy - X%%
 
 
 # SVM - KFold 
@@ -299,5 +305,5 @@ svm_kfold
 # Model Predictions & Accuracy 
 asdf1_nnet_kfold_predictions <- mutate(asdf1_norm_kfold_test, model_predictions = predict(nnet_kfold, newdata = asdf1_norm_kfold_test))
 mean(~(outcome_type == model_predictions), data = asdf1_nnet_kfold_predictions )
-# Model Accuracy XX.XX% 
+# Model Accuracy X%
 
